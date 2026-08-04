@@ -64,7 +64,7 @@
                         <div class="col-lg-4 col-md-6 d-flex flex-column align-items-center justify-content-center">
 
                             <div class="d-flex justify-content-center py-4">
-                                <a href="{{ url('/') }}" class="logo d-flex align-items-center w-auto">
+                                <a href="{{ route('register') }}" class="logo d-flex align-items-center w-auto">
                                     <img src="{{ asset('assets/img/logo.png') }}" alt="">
                                     <span class="d-none d-lg-block">NiceAdmin</span>
                                 </a>
@@ -159,25 +159,7 @@
                                             <div class="invalid-feedback">Please confirm your password!</div>
                                         </div>
 
-                                        {{-- Role --}}
-                                        <div class="col-12">
-                                            <label for="role" class="form-label">Role</label>
-                                            <select name="role" id="role"
-                                                class="form-control @error('role') is-invalid @enderror" required>
-                                                <option value="">Select Role</option>
-                                                <option value="student"
-                                                    {{ old('role') == 'student' ? 'selected' : '' }}>Student</option>
-                                                <option value="instructor"
-                                                    {{ old('role') == 'instructor' ? 'selected' : '' }}>Instructor</option>
-                                                <option value="admin"
-                                                    {{ old('role') == 'admin' ? 'selected' : '' }}>Admin</option>
-                                            </select>
-                                            @error('role')
-                                                <div class="invalid-feedback">{{ $message }}</div>
-                                            @else
-                                                <div class="invalid-feedback">Please select your role!</div>
-                                            @enderror
-                                        </div>
+
 
                                         {{-- Experience (Instructor only) --}}
                                         <div class="col-12" id="experienceWrapper">
@@ -210,6 +192,12 @@
                                                 Create Account
                                             </button>
                                         </div>
+                                        <div class="col-12">
+                                        <p class="small mb-0">
+                                            Already have an account?
+                                            <a href="{{ route('login') }}">Login</a>
+                                        </p>
+                                    </div>
 
                                     </form>
                                 </div>
@@ -276,37 +264,7 @@
     <script src="{{ asset('assets/js/main.js') }}"></script>
 
     <script>
-        /* ══════════════════════════════════════
-           1) Show Toasts automatically
-        ══════════════════════════════════════ */
-        document.addEventListener('DOMContentLoaded', () => {
-            const toastEls = document.querySelectorAll('.toast');
-            toastEls.forEach(el => {
-                const toast = new bootstrap.Toast(el, { delay: 4000 });
-                toast.show();
-            });
-        });
 
-        /* ══════════════════════════════════════
-           2) Show/Hide Experience based on Role
-        ══════════════════════════════════════ */
-        const roleSelect = document.getElementById('role');
-        const expWrapper = document.getElementById('experienceWrapper');
-        const expInput   = document.getElementById('experience');
-
-        function toggleExperience() {
-            if (roleSelect.value === 'instructor') {
-                expWrapper.classList.add('show');
-                expInput.setAttribute('required', 'required');
-            } else {
-                expWrapper.classList.remove('show');
-                expInput.removeAttribute('required');
-                expInput.value = '';
-            }
-        }
-
-        toggleExperience();
-        roleSelect.addEventListener('change', toggleExperience);
 
         /* ══════════════════════════════════════
            3) Image Preview
@@ -330,22 +288,7 @@
             }
         });
 
-        /* ══════════════════════════════════════
-           4) Bootstrap Form Validation
-        ══════════════════════════════════════ */
-        (() => {
-            'use strict';
-            const forms = document.querySelectorAll('.needs-validation');
-            Array.from(forms).forEach(form => {
-                form.addEventListener('submit', e => {
-                    if (!form.checkValidity()) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                    }
-                    form.classList.add('was-validated');
-                }, false);
-            });
-        })();
+
     </script>
 
 </body>

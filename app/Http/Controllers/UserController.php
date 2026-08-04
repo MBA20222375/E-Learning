@@ -11,76 +11,90 @@ use Illuminate\Support\Facades\Hash;
 class UserController extends Controller
 {
     public function register(Request $request)
-    {
-        $request->validate([
-            'name'                  => 'required|string|min:3|max:255',
-            'email'                 => 'required|email|unique:users,email',
-            'password'              => 'required|min:8|confirmed',
-            'password_confirmation' => 'required|min:8',
-            'phone'                 => 'required|digits:10|unique:users,phone',
-            'role'                  => 'nullable|in:student,instructor,admin',
-            'image'                 => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
-            'experience'            => 'nullable|string|max:255',
-        ]);
+{
+    $request->validate([
+        'name'     => 'required|string|min:3|max:255',
+        'email'    => 'required|email|unique:users,email',
+        'password' => 'required|min:8|confirmed',
+        'phone'    => 'required|digits:11|unique:users,phone',
+        'role'     => 'nullable|in:student,instructor',
+        'image'    => 'nullable|image|mimes:jpg,jpeg,png|max:2048',
+        'experience' => 'nullable|string|max:255',
+    ]);
+    $user = User::create([
+        'name'       => $request->name,
+        'email'      => $request->email,
+        'password'   => Hash::make($request->password),
+        'phone'      => $request->phone,
+        'role'       => $request->role ?? 'student',
+        'experience' => $request->experience,
+        'image'      => $request->hasFile('image')
+    ? $request->file('image')->store('profile_images', 'public')
+  : null,
+    ]);
 
-        $imagePath = null;
-        if ($request->hasFile('image')) {
-            $imagePath = $request->file('image')->store('profile_images', 'public');
+    Auth::login($user);
+    $user->update(['last_login_at' => now()]);
+
+    return $this->redirectByRole($user, 'Account created successfully!');
+}
+public function login(Request $request)
+{
+    $request->validate([
+        'email'    => 'required|email',
+        'password' => 'required|string',
+    ]);
+    if (Auth::attempt(['email' => $request->email, 'password' => $request->password], $request->boolean('remember'))) {
+        $request->session()->regenerate();
+
+        $user = Auth::user();
+
+        if (!$user->status) {
+            Auth::logout();
+            return back()->withErrors(['email' => 'Your account has been disabled.']);
         }
+        $user->update(['last_login_at' => now()]);
 
-        $user = User::create([
-            'name'       => $request->name,
-            'email'      => $request->email,
-            'password'   => Hash::make($request->password),
-            'phone'      => $request->phone,
-            'role'       => $request->role ?? 'student',
-            'experience' => $request->experience,
-            'image'      => $imagePath,
-        ]);
-
-        Auth::login($user);
-
-        if ($user->role === 'admin') {
-            return redirect()->route('admin.dashboard')->with('success', 'Account created successfully!');
-        } elseif ($user->role === 'instructor') {
-            return redirect()->route('instructor.dashboard')->with('success', 'Account created successfully!');
-        } else {
-            return redirect()->route('dashboard')->with('success', 'Account created successfully!');
-        }
+        return $this->redirectByRole($user, 'Welcome ' . $user->name);
     }
 
-    public function login(Request $request)
-    {
-        $request->validate([
-            'email'    => 'required|email',
-            'password' => 'required|string',
-        ]);
+    return back()->withErrors([
+        'email' => 'Incorrect email or password.'
+    ])->withInput($request->only('email', 'remember'));
+}
 
-        if (Auth::attempt(['email' => $request->email, 'password' => $request->password], $request->remember)) {
-            $request->session()->regenerate();
+private function redirectByRole(User $user, string $message)
+{
+    $route = match($user->role) {
+        'admin'      => 'admin.dashboard',
+        'instructor' => 'instructor.dashboard',
+        default      => 'dashboard',
+    };
 
-            $user = Auth::user();
+    return redirect()->route($route)->with('success', $message);
+}
+public function logout(Request $request)
+{
+    Auth::logout();
+    $request->session()->invalidate();
+    $request->session()->regenerateToken();
 
-            if ($user->role === 'admin') {
-                return redirect()->route('admin.dashboard')->with('success', 'Welcome  '.$user->name);
-            } elseif ($user->role === 'instructor') {
-                return redirect()->route('instructor.dashboard')->with('success', 'Welcome  '.$user->name);
-            } else {
-                return redirect()->route('dashboard')->with('success', 'Welcome  '.$user->name);
-            }
-        }
+    return redirect()->route('login')->with('success', 'Logged out successfully!');
+}
+public function dashboard()
+{
+    $user = Auth::user();
 
-        return back()->withErrors([
-            'email' => 'Incorrect password or incorrect email address'
-        ])->withInput($request->only('email', 'remember'));
-    }
+    $enrollments = $user->enrollments()
+                        ->with('course.instructor')
+                        ->latest()
+                        ->get();
 
-    public function logout(Request $request)
-    {
-        Auth::logout();
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
-        return redirect()->route('login')->with('success', 'Logged out successfully.');
-    }
+    return view('student.dashboard', [
+        'enrollments'      => $enrollments,
+        'enrolledCourses'  => $enrollments->count(),
+        'completedCourses' => $enrollments->where('progress', 100)->count(),
+        'certificates'     => 0,
+    ]);
+}
 }

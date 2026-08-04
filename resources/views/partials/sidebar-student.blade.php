@@ -11,7 +11,7 @@
         <li class="nav-heading">My Learning</li>
 
         <li class="nav-item">
-            <a class="nav-link collapsed" href="#">
+            <a class="nav-link {{ request()->is('my-courses') ? '' : 'collapsed' }}" href="{{ route('my-courses') }}">
                 <i class="bi bi-book"></i>
                 <span>My Courses</span>
             </a>
@@ -34,7 +34,7 @@
         <li class="nav-heading">Account</li>
 
         <li class="nav-item">
-            <a class="nav-link collapsed" href="#">
+            <a class="nav-link {{ request()->is('profile') ? '' : 'collapsed' }}" href="{{ route('profile') }}">
                 <i class="bi bi-person"></i>
                 <span>Profile</span>
             </a>

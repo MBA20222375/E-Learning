@@ -1,7 +1,7 @@
 <header id="header" class="header fixed-top d-flex align-items-center">
 
     <div class="d-flex align-items-center justify-content-between">
-        <a href="{{ url('/') }}" class="logo d-flex align-items-center">
+        <a href="{{ route('dashboard') }}" class="logo d-flex align-items-center">
             <img src="{{ asset('assets/img/logo.png') }}" alt="">
             <span class="d-none d-lg-block">E-Learning</span>
         </a>
@@ -15,7 +15,6 @@
             <li class="nav-item dropdown pe-3">
                 <a class="nav-link nav-profile d-flex align-items-center pe-0" href="#" data-bs-toggle="dropdown">
 
-                    {{-- ✅ صورة اليوزر أو default --}}
                     @if(Auth::user()->image)
                         <img src="{{ asset('storage/' . Auth::user()->image) }}" alt="Profile" class="rounded-circle">
                     @else

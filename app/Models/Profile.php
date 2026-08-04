@@ -15,11 +15,6 @@ class Profile extends Model
       'role',
     'experience',
      'image',
-     'about',
-      'address',
-    'twitter',
-     'facebook',
-     'instagram',
-     'linkedin',
+     'bio',
 ];
 }

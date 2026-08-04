@@ -33,7 +33,7 @@
 
                         {{-- Logo --}}
                         <div class="d-flex justify-content-center py-4">
-                            <a href="{{ url('/') }}" class="logo d-flex align-items-center w-auto">
+                            <a href="{{ route('login') }}" class="logo d-flex align-items-center w-auto">
                                 <img src="{{ asset('assets/img/logo.png') }}" alt="">
                                 <span class="d-none d-lg-block">NiceAdmin</span>
                             </a>
@@ -94,9 +94,23 @@
                                         </div>
                                     </div>
 
+                                    @if(session('throttle_seconds'))
+                                        <div class="col-12">
+                                            <div class="alert alert-danger d-flex align-items-center" role="alert">
+                                                <i class="bi bi-clock-fill me-2"></i>
+                                                Too many attempts. Please wait
+                                                <strong class="mx-1">{{ session('throttle_seconds') }}</strong>
+                                                seconds before trying again.
+                                            </div>
+                                        </div>
+                                    @endif
+
                                     {{-- Submit --}}
                                     <div class="col-12">
-                                        <button class="btn btn-primary w-100" type="submit">Login</button>
+                                        <button class="btn btn-primary w-100" type="submit"
+                                            {{ session('throttle_seconds') ? 'disabled' : '' }}>
+                                            Login
+                                        </button>
                                     </div>
 
                                     {{-- Register Link --}}
@@ -118,7 +132,7 @@
     </div>
 </main>
 
-{{-- ✅ Toast Container --}}
+{{-- Toast Container --}}
 <div class="toast-container position-fixed top-0 end-0 p-3" style="z-index: 9999">
 
     {{-- Success --}}
@@ -170,29 +184,6 @@
 
 <script src="{{ asset('assets/vendor/bootstrap/js/bootstrap.bundle.min.js') }}"></script>
 <script src="{{ asset('assets/js/main.js') }}"></script>
-
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-
-        // ✅ Show Toasts
-        document.querySelectorAll('.toast').forEach(el => {
-            new bootstrap.Toast(el, { delay: 4000 }).show();
-        });
-
-        // ✅ Bootstrap Validation
-        const forms = document.querySelectorAll('.needs-validation');
-        Array.from(forms).forEach(form => {
-            form.addEventListener('submit', e => {
-                if (!form.checkValidity()) {
-                    e.preventDefault();
-                    e.stopPropagation();
-                }
-                form.classList.add('was-validated');
-            }, false);
-        });
-
-    });
-</script>
 
 </body>
 </html>

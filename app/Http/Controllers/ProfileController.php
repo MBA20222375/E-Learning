@@ -11,24 +11,26 @@ use Illuminate\Support\Facades\Storage;
 
 class ProfileController extends Controller
 {
-    // ✅ عرض الصفحة
-   public function index()
+public function index()
 {
     $user = Auth::user();
+    $data = [];
 
-    // ✅ Stats مؤقتة — هتتحدث لما نعمل الـ Courses system
-    $data = [
-        'enrolledCourses'  => 0,
-        'completedCourses' => 0,
-        'certificates'     => 0,
-        'totalCourses'     => 0,
-        'totalStudents'    => 0,
-    ];
+    if ($user->role === 'instructor') {
+        $data['totalCourses']  = $user->courses()->count();
+        $data['totalStudents'] = $user->courses()
+                                      ->withCount('enrollments')
+                                      ->get()
+                                      ->sum('enrollments_count');
+    } elseif ($user->role === 'student') {
+        $data['enrolledCourses']  = $user->enrollments()->count();
+        $data['completedCourses'] = $user->enrollments()
+                                         ->where('completed', true)->count();
+    }
 
     return view('profile.index', $data);
 }
 
-    // ✅ تحديث البيانات
     public function update(Request $request): RedirectResponse
     {
         $user = Auth::user();
@@ -36,19 +38,12 @@ class ProfileController extends Controller
         $request->validate([
             'name'      => 'required|string|min:3|max:255',
             'email'     => 'required|email|unique:users,email,' . $user->id,
-            'phone'     => 'nullable|digits:10|unique:users,phone,' . $user->id,
-            'about' => 'nullable|string|max:500',                    // max 500 chars
+            'phone'     => 'nullable|digits:11|unique:users,phone,' . $user->id,
+            'bio' => 'nullable|string|max:500',
             'address'   => 'nullable|string|max:255',
-            'twitter'   => 'nullable|url|max:255',
-            'facebook'  => 'nullable|url|max:255',
-            'instagram' => 'nullable|url|max:255',
-            'linkedin'  => 'nullable|url|max:255',
-            'image' => 'nullable|image|mimes:jpg,jpeg,png|max:2048'
         ]);
 
-        // ✅ رفع صورة جديدة
         if ($request->hasFile('image')) {
-            // حذف الصورة القديمة
             if ($user->image) {
                 Storage::disk('public')->delete($user->image);
             }
@@ -58,18 +53,13 @@ class ProfileController extends Controller
         $user->name      = $request->name;
         $user->email     = $request->email;
         $user->phone     = $request->phone;
-        $user->about     = $request->about;
+        $user->bio       = $request->bio;
         $user->address   = $request->address;
-        $user->twitter   = $request->twitter;
-        $user->facebook  = $request->facebook;
-        $user->instagram = $request->instagram;
-        $user->linkedin  = $request->linkedin;
         $user->save();
 
         return back()->with('success', 'Profile updated successfully! ✅');
     }
 
-    // ✅ تغيير الباسورد
     public function updatePassword(Request $request): RedirectResponse
     {
         $request->validate([
@@ -82,7 +72,6 @@ class ProfileController extends Controller
             'password.confirmed'        => 'Passwords do not match.',
         ]);
 
-        // ✅ التحقق من الباسورد الحالي
         if (!Hash::check($request->current_password, Auth::user()->password)) {
             return back()->withErrors([
                 'current_password' => 'Current password is incorrect.'
